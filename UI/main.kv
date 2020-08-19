@@ -34,9 +34,9 @@ BoxLayout:
                 size: self.size
                 pos: self.pos
 
-        AsyncImage:
+        MyAsyncImage:
             id: async_image
-            source: 'https://stuff.gelse.eu/portrait.jpg'
+            source: 'https://kivy.org/logos/kivy-logo-black-64.png'
 
     BoxLayout:
         id: bottom_frame
@@ -51,4 +51,4 @@ BoxLayout:
                 size: self.size
         Label:
             id: status_label
-            text: async_image.source
+            text: async_image.state
