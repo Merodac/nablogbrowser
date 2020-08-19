@@ -1,0 +1,13 @@
+pip~=20.2.2
+setuptools~=49.6.0
+pypiwin32~=223
+pywin32~=228
+wheel~=0.35.1
+Kivy~=2.0.0rc3
+docutils~=0.16
+Pygments~=2.6.1
+requests~=2.24.0
+certifi~=2020.6.20
+chardet~=3.0.4
+urllib3~=1.25.10
+idna~=2.10

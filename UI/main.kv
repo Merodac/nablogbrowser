@@ -1,0 +1,54 @@
+#:kivy 1.0
+#:import kivy kivy
+#:import win kivy.core.window
+
+BoxLayout:
+    orientation: 'vertical'
+    canvas:
+        Color:
+            rgb: 0, 1, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    BoxLayout:
+        id: top_frame
+        orientation: 'horizontal'
+        height: 40
+        size_hint_y: None
+        canvas:
+            Color:
+                rgb: 1, 0, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+    GridLayout:
+        id: center_frame
+        rows: 3
+        cols: 3
+        canvas:
+            Color:
+                rgb: 0, 1, 0
+            Rectangle:
+                size: self.size
+                pos: self.pos
+
+        AsyncImage:
+            id: async_image
+            source: 'https://stuff.gelse.eu/portrait.jpg'
+
+    BoxLayout:
+        id: bottom_frame
+        orientation: 'horizontal'
+        height: 40
+        size_hint_y: None
+        canvas:
+            Color:
+                rgb: 1, 0, 0
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        Label:
+            id: status_label
+            text: async_image.source
