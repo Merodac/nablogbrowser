@@ -2,8 +2,9 @@
 #:import kivy kivy
 #:import win kivy.core.window
 
-BoxLayout:
+RootLayout:
     orientation: 'vertical'
+    id: root_layout
     canvas:
         Color:
             rgb: 0, 1, 1
@@ -49,6 +50,10 @@ BoxLayout:
             Rectangle:
                 pos: self.pos
                 size: self.size
+        Button:
+            id: start_load_button
+            text: "Start!"
+            on_release: root_layout.start_load_button()
         Label:
             id: status_label
             text: async_image.state
