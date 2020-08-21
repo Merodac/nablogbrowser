@@ -1,3 +1,5 @@
+import abc
+
 from lxml import etree
 from typing import Union, Any, List, Optional, cast
 from datetime import datetime
@@ -22,6 +24,7 @@ class Url:
 class Item:
   title: str
   link: Optional[Url]
+  thumb_url: Optional[Url]
   comments: Optional[str]
   pubDate: datetime
   guid: Optional[str]
@@ -32,6 +35,7 @@ class Item:
   def __init__(self,
                title: str,
                link: Optional[Url],
+               thumb_url: Optional[Url],
                comments: Optional[str],
                pubDate: datetime,
                guid: Optional[str],
@@ -39,6 +43,7 @@ class Item:
                content_raw: Optional[str]):
     self.title = title
     self.link = link
+    self.thumb_url = thumb_url
     self.comments = comments
     self.pubDate = pubDate
     self.categories = []
@@ -51,54 +56,108 @@ class Channel:
   title: str
   link: Url
   description: str
-  site: Optional[str]
   items: List[Item]
   updated: datetime
 
-  def __init__(self, title: str, updated: datetime, link: Url, description: str, site: Optional[str]):
+  def __init__(self, title: str, updated: datetime, link: Url, description: str):
     self.title = title
     self.updated = updated
     self.link = link
     self.description = description
-    self.site = site
     self.items = []
 
 
-class BaseParser:
+class BaseParser(abc.ABC):
   remote_url: str
 
   def __init__(self, remote_url: str):
     self.remote_url = remote_url
 
+  @abc.abstractmethod
+  def get_title(self) -> str:
+    pass
+
+  def get_feed(self) -> feedparser.FeedParserDict:
+    return feedparser.parse(self.remote_url)
+
+  @abc.abstractmethod
+  def get_updated_parsed(self, feed: feedparser.FeedParserDict) -> struct_time:
+    pass
+
+  @abc.abstractmethod
+  def get_link(self, feed: feedparser.FeedParserDict) -> Url:
+    pass
+
+  @abc.abstractmethod
+  def get_channel(self, feed: feedparser.FeedParserDict) -> feedparser.FeedParserDict:
+    pass
+
+  @abc.abstractmethod
+  def get_description(self, feed: feedparser.FeedParserDict) -> str:
+    pass
+
+  @abc.abstractmethod
+  def get_title_field(self, feed: feedparser.FeedParserDict) -> str:
+    pass
+
+  @abc.abstractmethod
+  def get_item_title(self, parserdict: feedparser.FeedParserDict) -> str:
+    pass
+
+  @abc.abstractmethod
+  def get_item_link(self, parserdict: feedparser.FeedParserDict) -> Url:
+    pass
+
+  @abc.abstractmethod
+  def get_item_comments(self, parserdict: feedparser.FeedParserDict) -> str:
+    pass
+
+  @abc.abstractmethod
+  def get_item_updated(self, parserdict: feedparser.FeedParserDict) -> struct_time:
+    pass
+
+  @abc.abstractmethod
+  def get_item_guid(self, parserdict: feedparser.FeedParserDict) -> str:
+    pass
+
+  @abc.abstractmethod
+  def get_item_description(self, parserdict: feedparser.FeedParserDict) -> str:
+    pass
+
+  @abc.abstractmethod
+  def get_item_content_raw(self, parserdict: feedparser.FeedParserDict) -> str:
+    pass
+
   def parse(self) -> Channel:
-    parse_result = feedparser.parse(self.remote_url)
+    feed = self.get_feed()
 
-    updated_parsed_struct = parse_result['updated_parsed']
+    updated_parsed_struct = self.get_updated_parsed(feed)
     updated_parsed = _format_datetime(updated_parsed_struct)
-    link = Url(parse_result['href'])
+    link = self.get_link(feed)
 
-    parsed_channel = parse_result['channel']
-    title = parsed_channel['title']
+    parsed_channel = self.get_channel(feed)
+    title = self.get_title_field(parsed_channel)
 
-    description = parsed_channel['description']
-    site = parsed_channel['site']
-    channel = Channel(title=title, updated=updated_parsed, link=link, description=description, site=site)
+    description = self.get_description(parsed_channel)
 
-    for item in parse_result['entries']:
-      title = item['title']
-      link = Url(item['link'])
-      comments = item['comments']
-      pubDate_struct = item['published_parsed']
+    channel = Channel(title=title, updated=updated_parsed, link=link, description=description)
+
+    for item in feed['entries']:
+      title = self.get_item_title(item)
+      link = self.get_item_link(item)
+      comments = self.get_item_comments(item)
+      pubDate_struct = self.get_item_updated(item)
       pubDate_parsed = _format_datetime(pubDate_struct)
-      guid = item['guid']
-      description = item['description']
-      content_raw = item['content'][0].value
+      guid = self.get_item_guid(item)
+      description = self.get_item_description(item)
+      content_raw = self.get_item_content_raw(item)
 
       parsed_item = self.create_item(title=title, link=link, comments=comments, pubDate=pubDate_parsed, guid=guid, description=description, content_raw=content_raw)
       channel.items.append(parsed_item)
 
     return channel
 
+  @abc.abstractmethod
   def create_item(self,
                   title: str,
                   link: Optional[Url],
@@ -107,10 +166,13 @@ class BaseParser:
                   guid: Optional[str],
                   description: Optional[str],
                   content_raw: Optional[str]) -> Item:
-    return Item(title=title, link=link, comments=comments, pubDate=pubDate, guid=guid, description=description, content_raw=content_raw)
+    pass
 
 
 def get_parser(url: str) -> BaseParser:
   if 'nablog' in url or 'naughtyblog' in url:
     from .nablog import Parser
+    return Parser(url)
+  if 'reddit' in url:
+    from .r_earthporn import Parser
     return Parser(url)

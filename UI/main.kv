@@ -7,10 +7,12 @@ RootLayout:
     id: root_layout
     canvas:
         Color:
-            rgb: 0, 1, 1
+            rgb: 0, 0, 0
         Rectangle:
+            source: 'data/images/background.jpg'
             pos: self.pos
             size: self.size
+
 
     BoxLayout:
         id: top_frame
@@ -19,25 +21,23 @@ RootLayout:
         size_hint_y: None
         canvas:
             Color:
-                rgb: 1, 0, 1
+                rgb: 0, 0, 0
             Rectangle:
                 pos: self.pos
                 size: self.size
+        Label:
+            id: status_label
+            text: root_layout.title
 
-    GridLayout:
-        id: center_frame
-        rows: 3
-        cols: 3
+
+    MyCenterLayout:
+        id: center_page
         canvas:
             Color:
-                rgb: 0, 1, 0
+                rgb: 0.2, 0.15, 0.15
             Rectangle:
                 size: self.size
                 pos: self.pos
-
-        MyAsyncImage:
-            id: async_image
-            source: 'https://kivy.org/logos/kivy-logo-black-64.png'
 
     BoxLayout:
         id: bottom_frame
@@ -46,14 +46,17 @@ RootLayout:
         size_hint_y: None
         canvas:
             Color:
-                rgb: 1, 0, 0
+                rgb: 0.2, 0.15, 0.15
             Rectangle:
                 pos: self.pos
                 size: self.size
         Button:
             id: start_load_button
             text: "Start!"
-            on_release: root_layout.start_load_button()
+            on_release: root_layout.start_load_button_pressed()
         Label:
             id: status_label
-            text: async_image.state
+            text: root_layout.state
+        Label:
+            id: page_count_label
+            text: center_page.index_str

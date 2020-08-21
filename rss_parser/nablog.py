@@ -1,3 +1,6 @@
+from time import struct_time
+
+import feedparser
 from . import Item, Url, Channel
 from . import BaseParser
 from typing import Union, Any, List, Optional, cast
@@ -7,7 +10,6 @@ import re
 
 
 class NaBlogItem(Item):
-  title_picture_thumburl: Url
   title_picture_url: Url
   release_date: str
   preview_thumburl: Url
@@ -21,12 +23,12 @@ class NaBlogItem(Item):
   def __init__(self,
                title: str,
                link: Optional[Url],
+               thumb_url: Optional[Url],
                comments: Optional[str],
                pubDate: datetime,
                guid: Optional[str],
                description: Optional[str],
                content_raw: Optional[str],
-               title_picture_thumburl: Url,
                link_picture_url: Url,
                release_date: str,
                preview_thumburl: Url,
@@ -37,8 +39,7 @@ class NaBlogItem(Item):
                audio: str,
                downloadlinks: List[Url]
                ):
-    super().__init__(title, link, comments, pubDate, guid, description, content_raw)
-    self.title_picture_thumburl = title_picture_thumburl
+    super().__init__(title, link, thumb_url, comments, pubDate, guid, description, content_raw)
     self.title_picture_url = link_picture_url
     self.release_date = release_date
     self.preview_thumburl = preview_thumburl
@@ -54,6 +55,45 @@ class Parser(BaseParser):
   def __init__(self, remote_url: str):
     super().__init__(remote_url=remote_url)
 
+  def get_title(self) -> str:
+    return "NABlog"
+
+  def get_updated_parsed(self, feed: feedparser.FeedParserDict) -> struct_time:
+    return feed['updated_parsed']
+
+  def get_link(self, feed: feedparser.FeedParserDict) -> Url:
+    return Url(feed['href'])
+
+  def get_channel(self, feed: feedparser.FeedParserDict) -> feedparser.FeedParserDict:
+    return feed['channel']
+
+  def get_description(self, feed: feedparser.FeedParserDict) -> str:
+    return feed['description']
+
+  def get_title_field(self, feed: feedparser.FeedParserDict) -> str:
+    return feed['title']
+
+  def get_item_title(self, parserdict: feedparser.FeedParserDict) -> str:
+    return parserdict['title']
+
+  def get_item_link(self, parserdict: feedparser.FeedParserDict) -> Url:
+    return Url(parserdict['link'])
+
+  def get_item_comments(self, parserdict: feedparser.FeedParserDict) -> str:
+    return parserdict['comments']
+
+  def get_item_updated(self, parserdict: feedparser.FeedParserDict) -> struct_time:
+    return parserdict['published_parsed']
+
+  def get_item_guid(self, parserdict: feedparser.FeedParserDict) -> str:
+    return parserdict['guid']
+
+  def get_item_description(self, parserdict: feedparser.FeedParserDict) -> str:
+    return parserdict['description']
+
+  def get_item_content_raw(self, parserdict: feedparser.FeedParserDict) -> str:
+    return parserdict['content'][0].value
+
   def create_item(self,
                   title: str,
                   link: Optional[Url],
@@ -64,7 +104,7 @@ class Parser(BaseParser):
                   content_raw: Optional[str]) -> Item:
 
     pq = PyQuery(content_raw)
-    title_picture_thumburl = self.get_title_picture_thumburl(pq)
+    thumb_url = self.get_title_picture_thumburl(pq)
     title_picture_url = self.get_title_picture_url(pq)
     release_date = self.get_release_date(pq)
     preview_linkurl, preview_thumburl = self.get_preview_urls(pq)
@@ -73,12 +113,12 @@ class Parser(BaseParser):
 
     return NaBlogItem(title=title,
                       link=link,
+                      thumb_url=thumb_url,
                       comments=comments,
                       pubDate=pubDate,
                       guid=guid,
                       description=description,
                       content_raw=content_raw,
-                      title_picture_thumburl=title_picture_thumburl,
                       link_picture_url=title_picture_url,
                       release_date=release_date,
                       preview_thumburl=preview_thumburl,
