@@ -1,10 +1,11 @@
-import abc
-
+import pathlib
+import abc, importlib, sys
 from lxml import etree
 from typing import Union, Any, List, Optional, cast
 from datetime import datetime
 from time import mktime, struct_time
 import feedparser
+
 
 
 def _format_datetime(timestruct: struct_time) -> datetime:
@@ -153,6 +154,8 @@ class BaseParser(abc.ABC):
       content_raw = self.get_item_content_raw(item)
 
       parsed_item = self.create_item(title=title, link=link, comments=comments, pubDate=pubDate_parsed, guid=guid, description=description, content_raw=content_raw)
+      if not parsed_item:
+        continue
       channel.items.append(parsed_item)
 
     return channel
@@ -169,10 +172,24 @@ class BaseParser(abc.ABC):
     pass
 
 
-def get_parser(url: str) -> BaseParser:
-  if 'nablog' in url or 'naughtyblog' in url:
-    from .nablog import Parser
-    return Parser(url)
-  if 'reddit' in url:
-    from .r_earthporn import Parser
-    return Parser(url)
+def get_parser(url: str) -> Optional[BaseParser]:
+
+  current_dir = pathlib.Path(__file__).parent.absolute()
+  parser_plugins = [x.name for x in current_dir.iterdir() if x.is_file() and not x.match('*'+__file__)]
+  for pp in parser_plugins:
+    packagename = pp.split('.')[0]
+    parser = get_parser_from_package('.' + packagename, url)
+    if parser:
+      print(f"Found parser: {parser.get_title()}")
+      return parser
+
+
+def get_parser_from_package(packagename: str, url: str):
+  package = importlib.import_module(packagename, package='rss_parser')
+  if package.can_parse(url):
+    return package.Parser(url)
+  if sys.getrefcount(package) < 5:  # TODO optimize
+    del package
+  pass
+
+

@@ -9,6 +9,10 @@ from pyquery import PyQuery
 import re
 
 
+def can_parse(url: str):
+  return url.startswith('https://www.naughtyblog.org/') and '/feed/' in url
+
+
 class NaBlogItem(Item):
   title_picture_url: Url
   release_date: str

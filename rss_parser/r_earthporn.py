@@ -3,9 +3,27 @@ from time import struct_time
 from typing import Optional
 
 import feedparser
+from pyquery import PyQuery
 
 from . import Item, Url, Channel
 from . import BaseParser
+
+
+def can_parse(url: str):
+  return url.startswith('https://www.reddit.com/r/EarthPorn/') and url.endswith('.rss')
+
+
+class EarthpornItem(Item):
+  def __init__(self,
+               title: str,
+               link: Optional[Url],
+               thumb_url: Optional[Url],
+               comments: Optional[str],
+               pubDate: datetime,
+               guid: Optional[str],
+               description: Optional[str],
+               content_raw: Optional[str]):
+    super().__init__(title, link, thumb_url, comments, pubDate, guid, description, content_raw)
 
 
 class Parser(BaseParser):
@@ -49,7 +67,7 @@ class Parser(BaseParser):
     return ""
 
   def get_item_content_raw(self, parserdict: feedparser.FeedParserDict) -> str:
-    return parserdict['content'][0]
+    return parserdict['content'][0].value
 
   def create_item(self,
                   title: str,
@@ -59,4 +77,22 @@ class Parser(BaseParser):
                   guid: Optional[str],
                   description: Optional[str],
                   content_raw: Optional[str]) -> Item:
-    pass
+    pq = PyQuery(content_raw)
+    thumb_url = self.get_title_picture_thumburl(pq)
+    return EarthpornItem(title=title,
+                         link=link,
+                         thumb_url=thumb_url,
+                         comments=comments,
+                         pubDate=pubDate,
+                         guid=guid,
+                         description=description,
+                         content_raw=content_raw)
+
+  # noinspection PyBroadException
+  def get_title_picture_thumburl(self, pq):
+
+    try:
+      pic = pq('img')[0].attrib['src']
+    except:
+      return None
+    return Url(pic)

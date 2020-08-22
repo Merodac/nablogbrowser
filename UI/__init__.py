@@ -116,8 +116,8 @@ class RootLayout(BoxLayout):
 
   def __init__(self, **kwargs):
     super().__init__(**kwargs)
-    # self.parser = get_parser('https://www.reddit.com/r/EarthPorn/.rss')
-    self.parser = get_parser('https://www.naughtyblog.org/category/clips/feed/')
+    self.parser = get_parser('https://www.reddit.com/r/EarthPorn/.rss')
+    # self.parser = get_parser('https://www.naughtyblog.org/category/clips/feed/')
     self.title = self.parser.get_title()
     self.is_loaded = False
 
