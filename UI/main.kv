@@ -60,3 +60,21 @@ RootLayout:
         Label:
             id: page_count_label
             text: center_page.index_str
+
+<MyPage>:
+    padding: 1,1,1,1
+    spacing: 1,1
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 1
+        Rectangle:
+            size: self.size
+            pos: self.pos
+
+<MyAsyncImage>:
+    canvas.before:
+        Color:
+            rgba: 0.2, 0.15, 0.15, 1
+        Rectangle:
+            size: self.size
+            pos: self.pos

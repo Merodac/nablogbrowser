@@ -39,12 +39,6 @@ def hide_widget(widget, dohide=True):
     widget.height, widget.size_hint_y, widget.opacity, widget.disabled = 0, None, 0, True
 
 
-def set_background(widget: Widget, value):
-  with widget.canvas.before:
-    Color(0.8, 0.15, 0.15)
-    Rectangle(pos=widget.pos, size=widget.size)
-
-
 class MainApp(App):
   def build(self):
     root = self.root
@@ -73,8 +67,6 @@ class MyPage(GridLayout):
 class MyAsyncImage(AsyncImage):
   def __init__(self, item: Item, **kwargs):
     super().__init__(**kwargs)
-    self.bind(size=set_background)
-    self.bind(pos=set_background)
     self.source = str(item.thumb_url)
 
   def on_load(self, *args):
@@ -108,8 +100,6 @@ class MyCenterLayout(PageLayout):
     self.index = self.index + 1
     self.current_grid = MyPage(self.index)
     self.add_widget(self.current_grid)
-    self.current_grid.size = self.size
-    self.current_grid.pos = self.pos
     self.index_str = str(self.index)
     return self.current_grid
 
