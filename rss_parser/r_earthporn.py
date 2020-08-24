@@ -76,9 +76,11 @@ class Parser(BaseParser):
                   pubDate: datetime,
                   guid: Optional[str],
                   description: Optional[str],
-                  content_raw: Optional[str]) -> Item:
+                  content_raw: Optional[str]) -> Optional[Item]:
     pq = PyQuery(content_raw)
     thumb_url = self.get_title_picture_thumburl(pq)
+    if not thumb_url:
+      return None
     return EarthpornItem(title=title,
                          link=link,
                          thumb_url=thumb_url,

@@ -4,6 +4,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.pagelayout import PageLayout
+from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.textinput import TextInput
 from kivy.properties import StringProperty, ObjectProperty, NumericProperty
 from kivy.graphics import Color, Rectangle
@@ -11,7 +12,7 @@ from kivy.uix.scatter import Scatter
 from kivy.uix.label import Label
 from kivy.uix.image import AsyncImage
 from kivy.app import App
-from rss_parser import get_parser, Item
+from rss_parser import get_parser, Item, Url
 from kivy.uix.widget import Widget
 
 
@@ -28,14 +29,20 @@ def _get_root(widget: Optional[Widget]) -> Optional[Widget]:
   return _get_root(local_parent)
 
 
-def hide_widget(wid, dohide=True):
-  if hasattr(wid, 'saved_attrs'):
+def hide_widget(widget, dohide=True):
+  if hasattr(widget, 'saved_attrs'):
     if not dohide:
-      wid.height, wid.size_hint_y, wid.opacity, wid.disabled = wid.saved_attrs
-      del wid.saved_attrs
+      widget.height, widget.size_hint_y, widget.opacity, widget.disabled = widget.saved_attrs
+      del widget.saved_attrs
   elif dohide:
-    wid.saved_attrs = wid.height, wid.size_hint_y, wid.opacity, wid.disabled
-    wid.height, wid.size_hint_y, wid.opacity, wid.disabled = 0, None, 0, True
+    widget.saved_attrs = widget.height, widget.size_hint_y, widget.opacity, widget.disabled
+    widget.height, widget.size_hint_y, widget.opacity, widget.disabled = 0, None, 0, True
+
+
+def set_background(widget: Widget, value):
+  with widget.canvas.before:
+    Color(0.8, 0.15, 0.15)
+    Rectangle(pos=widget.pos, size=widget.size)
 
 
 class MainApp(App):
@@ -49,16 +56,7 @@ class MainApp(App):
 class MyItemLayout(BoxLayout):
   def __init__(self, item: Item, **kwargs):
     super().__init__(**kwargs)
-
     label = Label()
-
-
-class MyAsyncImage(AsyncImage):
-  def __init__(self, **kwargs):
-    super().__init__(**kwargs)
-
-  def on_load(self, *args):
-    _get_root(self).state = "Loaded."
 
 
 class MyPage(GridLayout):
@@ -71,13 +69,22 @@ class MyPage(GridLayout):
   def is_full(self):
     return len(self.children) >= self.rows * self.cols
 
-  def set_background(self):
-    self.canvas.clear()
-    self.canvas.add(Color(0.8, 0.15, 0.15))
-    filling_rectangle = Rectangle()
-    filling_rectangle.pos = self.pos
-    filling_rectangle.size = self.size
-    self.canvas.add(filling_rectangle)
+
+class MyAsyncImage(AsyncImage):
+  def __init__(self, item: Item, **kwargs):
+    super().__init__(**kwargs)
+    self.bind(size=set_background)
+    self.bind(pos=set_background)
+    self.source = str(item.thumb_url)
+
+  def on_load(self, *args):
+    super().on_load()
+
+
+class ItemLayout(RelativeLayout):
+  def __init__(self, item: Item, **kw):
+    super().__init__(**kw)
+    self._item = item
 
 
 class MyCenterLayout(PageLayout):
@@ -89,13 +96,11 @@ class MyCenterLayout(PageLayout):
     super().__init__(**kwargs)
     self._current_grid_fillcount = 0
     self.current_grid = None
-    self.swipe_threshold = 0.5
 
   def add_item(self, item: Item):
     if not self.current_grid:
       self.add_new_page()
-    image = AsyncImage()
-    image.source = str(item.thumb_url)
+    image = MyAsyncImage(item)
     self.current_grid.add_widget(image)
 
   def add_new_page(self) -> MyPage:
@@ -105,7 +110,6 @@ class MyCenterLayout(PageLayout):
     self.add_widget(self.current_grid)
     self.current_grid.size = self.size
     self.current_grid.pos = self.pos
-    self.current_grid.set_background()
     self.index_str = str(self.index)
     return self.current_grid
 
