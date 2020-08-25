@@ -1,3 +1,4 @@
+import webbrowser
 from typing import cast, Optional
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.boxlayout import BoxLayout
@@ -47,18 +48,10 @@ class MainApp(App):
     return True
 
 
-class MyItemLayout(BoxLayout):
-  def __init__(self, item: Item, **kwargs):
-    super().__init__(**kwargs)
-    label = Label()
-
-
 class MyPage(GridLayout):
   def __init__(self, index, **kwargs):
     super().__init__(**kwargs)
     self.index = index
-    self.rows = 5
-    self.cols = 3
 
   def is_full(self):
     return len(self.children) >= self.rows * self.cols
@@ -69,14 +62,21 @@ class MyAsyncImage(AsyncImage):
     super().__init__(**kwargs)
     self.source = str(item.thumb_url)
 
-  def on_load(self, *args):
-    super().on_load()
 
+class MyItemLayout(RelativeLayout):
+  thumb_url = StringProperty()
 
-class ItemLayout(RelativeLayout):
   def __init__(self, item: Item, **kw):
     super().__init__(**kw)
     self._item = item
+    self.thumb_url = str(item.thumb_url)
+    image = MyAsyncImage(item)
+    self.add_widget(image)
+
+  def on_touch_down(self, touch):
+    if self.x < touch.x < self.x + self.width \
+       and self.y < touch.y < self.y + self.height:
+      webbrowser.open(url=str(self._item.link), new=0, autoraise=True)
 
 
 class MyCenterLayout(PageLayout):
@@ -92,7 +92,7 @@ class MyCenterLayout(PageLayout):
   def add_item(self, item: Item):
     if not self.current_grid:
       self.add_new_page()
-    image = MyAsyncImage(item)
+    image = MyItemLayout(item)
     self.current_grid.add_widget(image)
 
   def add_new_page(self) -> MyPage:
